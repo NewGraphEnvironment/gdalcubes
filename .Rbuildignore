@@ -99,3 +99,6 @@
 ^inst/gdal$
 ^inst/proj$
 ^revdep$
+^CLAUDE\.md$
+^planning$
+^\.claude$
