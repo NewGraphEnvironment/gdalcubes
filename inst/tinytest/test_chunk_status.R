@@ -95,9 +95,11 @@ for (p in c(1, 2)) {
   expect_true(all(r$values[!is.na(r$values)] == 500), info = paste("cloud scene masked, parallel", p))
   expect_true(any(!is.na(r$values)), info = paste("clean read has data, parallel", p))
 
+  # the EPSG:32610 fixture at 0..400 lies near x = 668200..668600 in EPSG:32609
   r = chunk_status_of(chunk_status_fixture("none", srs = "EPSG:32610"), p,
-                      srs = "EPSG:32609", extent = c(-4500000, -4499000, 0, 1000))
+                      srs = "EPSG:32609", extent = c(668000, 669000, -300, 700))
   expect_true(all(r$status == 0), info = paste("reprojected read is OK, parallel", p))
+  expect_true(any(!is.na(r$values)), info = paste("reprojected read has data, parallel", p))
 
   r = chunk_status_of(chunk_status_fixture("none"), p, extent = c(-400, 800, -400, 800))
   expect_true(all(r$status == 0), info = paste("partially covered view is OK, parallel", p))
@@ -105,6 +107,7 @@ for (p in c(1, 2)) {
   r = chunk_status_of(chunk_status_fixture("none", size = 6000), p,
                       extent = c(0, 6000, 0, 6000), dx = 40)
   expect_true(all(r$status == 0), info = paste("read through overviews is OK, parallel", p))
+
 
   for (b in c("band_read", "mask_open", "mask_read")) {
     fx = chunk_status_fixture(b)
