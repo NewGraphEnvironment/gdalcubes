@@ -2,6 +2,7 @@
 
 * fix `write_ncdf()` and other computations hanging forever when a worker process dies before writing its log file, e.g. when killed by a signal at startup
 * record failed image reads in `chunk_status`: a warp whose source read fails after a successful open (e.g. a corrupted tile, or a refused or throttled HTTP range request) and a mask image that fails to open or read are now reported as incomplete (error when `incomplete_ok = FALSE`) instead of OK; a failed mask read no longer leaves the scene unmasked
+* fix a worker crash when a band of a multi-band image is read through overviews: the source was closed before its overview was opened, and the overview of a band-selection VRT cannot be opened
 
 # gdalcubes 0.7.5 (2026-09-15)
 
