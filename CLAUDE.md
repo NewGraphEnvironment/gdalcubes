@@ -19,6 +19,7 @@ Earth observation data cubes from satellite image collections — R package with
 - Pass `-R NewGraphEnvironment/gdalcubes` (or `-R appelmar/gdalcubes`) to `gh`. There is an `upstream` remote, so a bare `gh` can act on the wrong repo.
 - A `Closes #N` in a PR into `newgraph` does not close the issue (GitHub acts only on merges into the default branch, `master`). Close it by hand after the merge, with a comment naming the PR.
 - Issue and PR drafts meant for upstream live as fork issues labelled `upstream-draft` and fork PRs; the text above the `---` footer is the upstream text, and the footer (fork links, `Relates to` private repos) is stripped when posting.
+- Every upstream issue carries a reprex: a self-contained R block, offline (build inputs with `gdalcubes:::.raster_cube_dummy()` + `write_tif()` into a `tempfile()`), that a maintainer can paste into a fresh session and see the failure, with the version, OS and GDAL it was measured on, and the observed vs expected output. A PR with no issue carries its reprex in the PR body. Prose steps ("corrupt the first tile, then…") are not a reprex. Precedent: appelmar/gdalcubes#110.
 - This fork is **public**. Hosts, credentials and anything internal stay out of its issues, PRs, commit messages and files.
 
 <!-- BEGIN SOUL CONVENTIONS — DO NOT EDIT BELOW THIS LINE -->
