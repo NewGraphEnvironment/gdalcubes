@@ -1,3 +1,7 @@
+# gdalcubes (development version)
+
+* record failed image reads in `chunk_status`: a warp whose source read fails (e.g. a corrupted tile or a failed HTTP range request after a successful open), a mask image that fails to open or read, and a worker chunk file the main process cannot read are now reported as incomplete or error instead of OK
+
 # gdalcubes 0.7.5 (2026-09-15)
 
 * fix segfault in worker processes when computing a `filter_geom()` cube under GDAL 3 (#110)

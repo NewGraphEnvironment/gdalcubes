@@ -1859,6 +1859,7 @@ void chunk_data::read_ncdf(std::string path) {
     int retval = nc_open(path.c_str(), NC_NOWRITE, &ncfile);
     if (retval != NC_NOERR) {
         GCBS_ERROR("Failed to open netCDF file '" + path + "'; nc_open() returned " + std::to_string(retval));
+        set_status(chunk_data::chunk_status::ERROR);
         return;
     }
 
@@ -1883,6 +1884,7 @@ void chunk_data::read_ncdf(std::string path) {
 
     if (dim_id_x < 0 || dim_id_y < 0 || dim_id_t < 0 || dim_id_b < 0 ) {
         GCBS_ERROR("Failed to identify dimensions in netCDF file '" + path + "'");
+        set_status(chunk_data::chunk_status::ERROR);
         retval = nc_close(ncfile);
         if (retval != NC_NOERR) {
             GCBS_DEBUG("Failed to properly close netCDF file '" + path + "'; nc_close() returned " + std::to_string(retval));
@@ -1894,6 +1896,7 @@ void chunk_data::read_ncdf(std::string path) {
     retval = nc_inq_varid(ncfile, "value", &vid);
     if (vid < 0) {
         GCBS_ERROR("Failed to identify variable in netCDF file '" + path + "'");
+        set_status(chunk_data::chunk_status::ERROR);
         retval = nc_close(ncfile);
         if (retval != NC_NOERR) {
             GCBS_DEBUG("Failed to properly close netCDF file '" + path + "'; nc_close() returned " + std::to_string(retval));
@@ -1911,12 +1914,20 @@ void chunk_data::read_ncdf(std::string path) {
     retval = nc_inq_dimlen(ncfile, dim_id_b, &nb);
 
     if (nx <= 0 || ny <= 0 || nt <= 0 || nb <= 0) {
+        nc_close(ncfile);
         return; // chunk is empty
     }
 
     this->size({uint32_t(nb),uint32_t(nt),uint32_t(ny),uint32_t(nx)});
     this->buf(std::malloc(sizeof(double) * nx * ny * nt * nb));
-    nc_get_var_double(ncfile, vid, (double*)(this->buf()));
+    retval = nc_get_var_double(ncfile, vid, (double*)(this->buf()));
+    if (retval != NC_NOERR) {
+        // the buffer is uninitialised; never merge it as data
+        GCBS_ERROR("Failed to read data from netCDF file '" + path + "'; nc_get_var_double() returned " + std::to_string(retval));
+        this->buf(nullptr);  // frees the buffer, since size() is still set
+        this->size({0, 0, 0, 0});
+        set_status(chunk_data::chunk_status::ERROR);
+    }
 
     retval = nc_close(ncfile);
     if (retval != NC_NOERR) {
