@@ -165,7 +165,13 @@ GDALDataset *gdalwarp_client::warp_simple(GDALDataset *in, std::string s_srs, st
                 psWarpOptions->pTransformerArg = create_transform(in, out, s_srs, t_srs);
                 psWarpOptions->hSrcDS = in;  // TODO: close in_ov
             } else {
+                // `in` was closed above; reopen it, or there is nothing left to warp from
                 GCBS_WARN("Failed to open GDAL overview dataset for '" + descr + "', using original full resolution image.");
+                in = (GDALDataset *)GDALOpen(descr.c_str(), GA_ReadOnly);
+                psWarpOptions->hSrcDS = in;
+                if (in == NULL) {
+                    GCBS_WARN("GDAL could not reopen '" + descr + "'");
+                }
             }
             CSLDestroy(oo);
         }
@@ -250,14 +256,16 @@ GDALDataset *gdalwarp_client::warp_simple(GDALDataset *in, std::string s_srs, st
 
     // Initialize and execute the warp operation.
     GDALWarpOperation oOperation;
-    if (oOperation.Initialize(psWarpOptions) != CE_None) {
-        GCBS_ERROR("Initialization of gdalwarp failed");
-    }
     // A failed warp (e.g. a tile that cannot be read or decoded) leaves the output
     // partly or wholly unwritten; report it as a failure rather than returning
     // the INIT_DEST=nan buffer as if it were data.
-    bool warp_failed = oOperation.ChunkAndWarpImage(0, 0, GDALGetRasterXSize(out), GDALGetRasterYSize(out)) != CE_None;
-    if (warp_failed) {
+    bool warp_failed = (in == NULL);
+    if (!warp_failed && oOperation.Initialize(psWarpOptions) != CE_None) {
+        GCBS_ERROR("Initialization of gdalwarp failed");
+        warp_failed = true;
+    }
+    if (!warp_failed && oOperation.ChunkAndWarpImage(0, 0, GDALGetRasterXSize(out), GDALGetRasterYSize(out)) != CE_None) {
+        warp_failed = true;
         GCBS_WARN("gdalwarp returned error code #" + std::to_string(CPLGetLastErrorNo()) + ": " + std::string(CPLGetLastErrorMsg()) +
                   " [" + std::string(in->GetDescription()) + "]");
     }
@@ -569,7 +577,13 @@ GDALDataset *gdalwarp_client::warp_complex(GDALDataset *in, std::string s_srs, s
                 psWarpOptions->pTransformerArg = create_transform(in, out, s_srs, t_srs);
                 psWarpOptions->hSrcDS = in;  // TODO: close in_ov
             } else {
+                // `in` was closed above; reopen it, or there is nothing left to warp from
                 GCBS_WARN("Failed to open GDAL overview dataset for '" + descr + "', using original full resolution image.");
+                in = (GDALDataset *)GDALOpen(descr.c_str(), GA_ReadOnly);
+                psWarpOptions->hSrcDS = in;
+                if (in == NULL) {
+                    GCBS_WARN("GDAL could not reopen '" + descr + "'");
+                }
             }
             CSLDestroy(oo);
         }
@@ -654,17 +668,18 @@ GDALDataset *gdalwarp_client::warp_complex(GDALDataset *in, std::string s_srs, s
 
     // Initialize and execute the warp operation.
     GDALWarpOperation oOperation;
-    if (oOperation.Initialize(psWarpOptions) != CE_None) {
-        GCBS_ERROR("Initialization of gdalwarp failed");
-    }
-
     // A failed warp (e.g. a tile that cannot be read or decoded) leaves the output
     // partly or wholly unwritten; report it as a failure rather than returning
     // the INIT_DEST=nan buffer as if it were data.
-    bool warp_failed = oOperation.ChunkAndWarpImage(0, 0,
+    bool warp_failed = (in == NULL);
+    if (!warp_failed && oOperation.Initialize(psWarpOptions) != CE_None) {
+        GCBS_ERROR("Initialization of gdalwarp failed");
+        warp_failed = true;
+    }
+    if (!warp_failed && oOperation.ChunkAndWarpImage(0, 0,
                                  GDALGetRasterXSize(out),
-                                 GDALGetRasterYSize(out)) != CE_None;
-    if (warp_failed) {
+                                 GDALGetRasterYSize(out)) != CE_None) {
+        warp_failed = true;
         GCBS_WARN("gdalwarp returned error code #" + std::to_string(CPLGetLastErrorNo()) + ": " + std::string(CPLGetLastErrorMsg()) +
                   " [" + std::string(in->GetDescription()) + "]");
     }

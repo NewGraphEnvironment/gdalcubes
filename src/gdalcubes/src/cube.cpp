@@ -1908,10 +1908,15 @@ void chunk_data::read_ncdf(std::string path) {
     std::size_t nt = -1;
     std::size_t nb = -1;
 
-    retval = nc_inq_dimlen(ncfile, dim_id_x, &nx);
-    retval = nc_inq_dimlen(ncfile, dim_id_y, &ny);
-    retval = nc_inq_dimlen(ncfile, dim_id_t, &nt);
-    retval = nc_inq_dimlen(ncfile, dim_id_b, &nb);
+    if (nc_inq_dimlen(ncfile, dim_id_x, &nx) != NC_NOERR ||
+        nc_inq_dimlen(ncfile, dim_id_y, &ny) != NC_NOERR ||
+        nc_inq_dimlen(ncfile, dim_id_t, &nt) != NC_NOERR ||
+        nc_inq_dimlen(ncfile, dim_id_b, &nb) != NC_NOERR) {
+        GCBS_ERROR("Failed to read dimension sizes from netCDF file '" + path + "'");
+        set_status(chunk_data::chunk_status::ERROR);
+        nc_close(ncfile);
+        return;
+    }
 
     if (nx <= 0 || ny <= 0 || nt <= 0 || nb <= 0) {
         nc_close(ncfile);
