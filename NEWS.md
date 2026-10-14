@@ -1,6 +1,7 @@
 # gdalcubes (development version)
 
 * record failed image reads in `chunk_status`: a warp whose source read fails (e.g. a corrupted tile or a failed HTTP range request after a successful open), a mask image that fails to open or read, and a worker chunk file the main process cannot read are now reported as incomplete or error instead of OK
+* fix `write_ncdf()` and other computations hanging forever when a worker process dies before writing its log file, e.g. when killed by a signal at startup
 
 # gdalcubes 0.7.5 (2026-09-15)
 
